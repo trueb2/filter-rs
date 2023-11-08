@@ -29,14 +29,21 @@ pub fn normalize<F: Float>(pdf: &mut [F]) {
     pdf.iter_mut().for_each(|f| *f = *f / sum);
 }
 
+/// An error that can occur when updating a discrete Bayes filter.
+#[derive(Debug, Copy, Clone)]
+pub enum UpdateError {
+    /// The likelihood and prior have different lengths.
+    LengthMismatch,
+}
+
 /// Computes the posterior of a discrete random variable given a
 /// discrete likelihood and prior. In a typical application the likelihood
 /// will be the likelihood of a measurement matching your current environment,
 /// and the prior comes from discrete_bayes.predict().
 ///
-pub fn update<F: Float>(likelihood: &[F], prior: &[F]) -> Result<Vec<F>, ()> {
+pub fn update<F: Float>(likelihood: &[F], prior: &[F]) -> Result<Vec<F>, UpdateError> {
     if likelihood.len() != prior.len() {
-        return Err(());
+        return Err(UpdateError::LengthMismatch);
     }
     let mut posterior: Vec<F> = likelihood
         .iter()

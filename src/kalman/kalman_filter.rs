@@ -4,7 +4,7 @@ This module implements the linear Kalman filter
 
 use nalgebra::allocator::Allocator;
 use nalgebra::base::dimension::DimName;
-use nalgebra::{DefaultAllocator, OMatrix, RealField, OVector};
+use nalgebra::{DefaultAllocator, OMatrix, OVector, RealField};
 use num_traits::Float;
 
 /// Implements a Kalman filter.
@@ -99,10 +99,9 @@ where
         let F = F.unwrap_or(&self.F);
         let Q = Q.unwrap_or(&self.Q);
 
-        if B.is_some() && u.is_some() {
-            self.x = F * self.x.clone() + B.unwrap() * u.unwrap();
-        } else {
-            self.x = F * self.x.clone();
+        match (B, u) {
+            (Some(B), Some(u)) => self.x = F * self.x.clone() + B * u,
+            _ => self.x = F * self.x.clone(),
         }
 
         self.P = ((F * self.P.clone()) * F.transpose()) * self.alpha_sq + Q;
@@ -150,10 +149,9 @@ where
     ) {
         let B = if B.is_some() { B } else { self.B.as_ref() };
 
-        if B.is_some() && u.is_some() {
-            self.x = &self.F * &self.x + B.unwrap() * u.unwrap();
-        } else {
-            self.x = &self.F * &self.x;
+        match (B, u) {
+            (Some(B), Some(u)) => self.x = &self.F * &self.x + B * u,
+            _ => self.x = &self.F * &self.x,
         }
 
         self.x_prior = self.x.clone();
@@ -183,10 +181,9 @@ where
 
         let B = self.B.as_ref();
         let x = {
-            if B.is_some() && u.is_some() {
-                F * &self.x + B.unwrap() * u.unwrap()
-            } else {
-                F * &self.x
+            match (B, u) {
+                (Some(B), Some(u)) => F * &self.x + B * u,
+                _ => F * &self.x,
             }
         };
 

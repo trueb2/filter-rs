@@ -227,8 +227,7 @@ impl<T: FloatCore> GHKFilter<T> {
         let k = self.k;
         let gh2 = two * g + h;
 
-        (g * k * (gh2 - four) + h * (g * gh2 + two * h))
-            / (two * k - (g * (h + k) * (gh2 - four)))
+        (g * k * (gh2 - four) + h * (g * gh2 + two * h)) / (two * k - (g * (h + k) * (gh2 - four)))
     }
 
     /// Returns the Variance Reduction Factor (VRF) of the state variable
