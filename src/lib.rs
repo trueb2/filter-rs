@@ -6,8 +6,17 @@ This library is a work in progress. To learn more about Kalman filters check out
 awesome book [Kalman-and-Bayesian-Filters-in-Python](https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python)
 
 */
-#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations,
-trivial_casts, trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces, unused_qualifications)]
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications
+)]
 #![no_std]
 
 #[cfg(feature = "alloc")]

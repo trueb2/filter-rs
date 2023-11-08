@@ -1,9 +1,9 @@
 [package]
 name = "filter"
-version = "0.2.1-dev"
-authors = ["Michael Mauderer <michael@michaelmauderer.com>"]
-edition = "2018"
-repository = "https://github.com/MichaelMauderer/filter-rs"
+version = "0.2.2"
+authors = ["Michael Mauderer <michael@michaelmauderer.com>", "Jacob Trueb <jtrueb@northwestern.edu"]
+edition = "2021"
+repository = "https://github.com/trueb2/filter-rs"
 license = "MIT"
 readme = "README.md"
 description = "Kalman filters and other optimal and non-optimal estimation filters in Rust."
@@ -12,8 +12,8 @@ categories = ["algorithms", "science", "no-std"]
 keywords = ["filters", "kalman", "signal-processing"]
 
 [dependencies]
-nalgebra = { version = "0.21.0", default-features = false }
-num-traits = { version = "0.2.11", default-features = false }
+nalgebra = { version = "0.32.3", default-features = false, features = ["libm"] }
+num-traits = { version = "0.2.17", default-features = false, features = ["libm"]}
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"

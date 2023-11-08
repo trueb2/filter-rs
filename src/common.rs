@@ -102,11 +102,11 @@ pub(crate) mod vec {
     }
 }
 
-#[cfg(all(test, feature="std"))]
+#[cfg(all(test, feature = "std"))]
 mod tests {
+    use super::vec::*;
     use assert_approx_eq::assert_approx_eq;
     use num_traits::Float;
-    use super::vec::*;
 
     #[test]
     fn test_convolve_extended() {

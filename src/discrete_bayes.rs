@@ -72,7 +72,7 @@ pub fn predict<F: Float>(pdf: &[F], offset: i64, kernel: &[F], mode: EdgeHandlin
     }
 }
 
-#[cfg(all(test, feature="std"))]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
