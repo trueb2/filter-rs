@@ -1,12 +1,12 @@
 [package]
-name = "filter"
+name = "kalmanfilt"
 version = "0.2.2"
-authors = ["Michael Mauderer <michael@michaelmauderer.com>", "Jacob Trueb <jtrueb@northwestern.edu"]
+authors = ["Jacob Trueb <jtrueb@northwestern.edu", "Michael Mauderer <michael@michaelmauderer.com>"]
 edition = "2021"
-repository = "https://github.com/trueb2/filter-rs"
+repository = "https://github.com/trueb2/kalmanfilt"
 license = "MIT"
 readme = "README.md"
-description = "Kalman filters and other optimal and non-optimal estimation filters in Rust."
+description = "Kalman and other filters from Kalman-and-Bayesian-Filters-in-Python"
 
 categories = ["algorithms", "science", "no-std"]
 keywords = ["filters", "kalman", "signal-processing"]
