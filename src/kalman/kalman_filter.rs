@@ -45,7 +45,7 @@ where
     pub P_prior: OMatrix<F, DimX, DimX>,
     /// Posterior (updated) state estimate.
     pub x_post: OVector<F, DimX>,
-    ///Posterior (updated) state covariance matrix.
+    /// Posterior (updated) state covariance matrix.
     pub P_post: OMatrix<F, DimX, DimX>,
     /// Last measurement
     pub z: Option<OVector<F, DimZ>>,
@@ -69,6 +69,13 @@ where
     pub SI: OMatrix<F, DimZ, DimZ>,
     /// Fading memory setting.
     pub alpha_sq: F,
+}
+
+/// Kalman filtering may error in some cases.
+#[derive(Debug, Clone, Copy)]
+pub enum KalmanError {
+    /// The matrix is not invertible.
+    NotInvertible,
 }
 
 #[allow(non_snake_case)]
@@ -100,11 +107,11 @@ where
         let Q = Q.unwrap_or(&self.Q);
 
         match (B, u) {
-            (Some(B), Some(u)) => self.x = F * self.x.clone() + B * u,
-            _ => self.x = F * self.x.clone(),
+            (Some(B), Some(u)) => self.x = F * &self.x + B * u,
+            _ => self.x = F * &self.x,
         }
 
-        self.P = ((F * self.P.clone()) * F.transpose()) * self.alpha_sq + Q;
+        self.P = ((F * &self.P) * F.transpose()) * self.alpha_sq + Q;
 
         self.x_prior = self.x.clone();
         self.P_prior = self.P.clone();
@@ -116,16 +123,16 @@ where
         z: &OVector<F, DimZ>,
         R: Option<&OMatrix<F, DimZ, DimZ>>,
         H: Option<&OMatrix<F, DimZ, DimX>>,
-    ) {
+    ) -> Result<(), KalmanError> {
         let R = R.unwrap_or(&self.R);
         let H = H.unwrap_or(&self.H);
 
         self.y = z - H * &self.x;
 
-        let PHT = self.P.clone() * H.transpose();
+        let PHT = &self.P * H.transpose();
         self.S = H * &PHT + R;
 
-        self.SI = self.S.clone().try_inverse().unwrap();
+        self.SI = self.S.clone().try_inverse().ok_or(KalmanError::NotInvertible)?;
 
         self.K = PHT * &self.SI;
 
@@ -133,11 +140,13 @@ where
 
         let I_KH = OMatrix::<F, DimX, DimX>::identity() - &self.K * H;
         self.P =
-            ((I_KH.clone() * &self.P) * I_KH.transpose()) + ((&self.K * R) * &self.K.transpose());
+            ((&I_KH * &self.P) * I_KH.transpose()) + ((&self.K * R) * &self.K.transpose());
 
         self.z = Some(z.clone());
         self.x_post = self.x.clone();
         self.P_post = self.P.clone();
+
+        Ok(())
     }
 
     /// Predict state (prior) using the Kalman filter state propagation equations.
@@ -193,7 +202,7 @@ where
     }
 
     ///  Computes the new estimate based on measurement `z` and returns it without altering the state of the filter.
-    pub fn get_update(&self, z: &OVector<F, DimZ>) -> (OVector<F, DimX>, OMatrix<F, DimX, DimX>) {
+    pub fn get_update(&self, z: &OVector<F, DimZ>) -> Result<(OVector<F, DimX>, OMatrix<F, DimX, DimX>), KalmanError> {
         let R = &self.R;
         let H = &self.H;
         let P = &self.P;
@@ -204,7 +213,7 @@ where
         let PHT = &(P * H.transpose());
 
         let S = H * PHT + R;
-        let SI = S.try_inverse().unwrap();
+        let SI = S.try_inverse().ok_or(KalmanError::NotInvertible)?;
 
         let K = &(PHT * SI);
 
@@ -214,7 +223,7 @@ where
 
         let P = ((I_KH * P) * I_KH.transpose()) + ((K * R) * &K.transpose());
 
-        (x, P)
+        Ok((x, P))
     }
 
     /// Returns the residual for the given measurement (z). Does not alter the state of the filter.
@@ -305,7 +314,7 @@ mod tests {
             let zf = i as f32;
             let z = Vector1::new(zf);
             kf.predict(None, None, None, None);
-            kf.update(&z, None, None);
+            kf.update(&z, None, None).unwrap();
             assert_approx_eq!(zf, kf.z.clone().unwrap()[0]);
         }
     }
@@ -323,7 +332,7 @@ mod tests {
 
         for t in 0..100 {
             let z = Vector1::new(t as f64);
-            kf.update(&z, None, None);
+            kf.update(&z, None, None).unwrap();
             kf.predict(None, None, None, None);
             // This matches the results from an equivalent filterpy filter.
             assert_approx_eq!(
