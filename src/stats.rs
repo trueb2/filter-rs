@@ -6,7 +6,7 @@ use core::ops::{Add, Mul};
 use num_traits::Float;
 
 /// Represents a gaussian distribution with mean and variance..
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct GaussianDistribution<F: Float> {
     /// Mean of the distribution.
     pub mean: F,
