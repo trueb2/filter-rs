@@ -19,7 +19,7 @@ use num_traits::Float;
 ///       https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 ///
 #[allow(non_snake_case)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KalmanFilter<F, DimX, DimZ, DimU>
 where
     F: RealField + Float,
@@ -132,15 +132,18 @@ where
         let PHT = &self.P * H.transpose();
         self.S = H * &PHT + R;
 
-        self.SI = self.S.clone().try_inverse().ok_or(KalmanError::NotInvertible)?;
+        self.SI = self
+            .S
+            .clone()
+            .try_inverse()
+            .ok_or(KalmanError::NotInvertible)?;
 
         self.K = PHT * &self.SI;
 
         self.x = &self.x + &self.K * &self.y;
 
         let I_KH = OMatrix::<F, DimX, DimX>::identity() - &self.K * H;
-        self.P =
-            ((&I_KH * &self.P) * I_KH.transpose()) + ((&self.K * R) * &self.K.transpose());
+        self.P = ((&I_KH * &self.P) * I_KH.transpose()) + ((&self.K * R) * &self.K.transpose());
 
         self.z = Some(z.clone());
         self.x_post = self.x.clone();
@@ -202,7 +205,10 @@ where
     }
 
     ///  Computes the new estimate based on measurement `z` and returns it without altering the state of the filter.
-    pub fn get_update(&self, z: &OVector<F, DimZ>) -> Result<(OVector<F, DimX>, OMatrix<F, DimX, DimX>), KalmanError> {
+    pub fn get_update(
+        &self,
+        z: &OVector<F, DimZ>,
+    ) -> Result<(OVector<F, DimX>, OMatrix<F, DimX, DimX>), KalmanError> {
         let R = &self.R;
         let H = &self.H;
         let P = &self.P;
