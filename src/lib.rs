@@ -22,6 +22,9 @@ awesome book [Kalman-and-Bayesian-Filters-in-Python](https://github.com/rlabbe/K
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+#[cfg(all(test, feature = "alloc"))]
+extern crate std;
+
 pub mod common;
 #[cfg(feature = "alloc")]
 pub mod discrete_bayes;
