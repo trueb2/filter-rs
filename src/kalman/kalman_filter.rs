@@ -405,6 +405,7 @@ where
     pub Pp: Vec<OMatrix<F, DimX, DimX>>,
 }
 
+#[cfg(feature = "alloc")]
 impl<F, DimX> RTSSmoothedResults<F, DimX>
 where
     F: RealField + Float,
@@ -433,8 +434,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::dbg;
-
     use assert_approx_eq::assert_approx_eq;
     use nalgebra::base::Vector1;
     use nalgebra::{Matrix1, Matrix2, Vector2, U1, U2};
@@ -509,9 +508,9 @@ mod tests {
         let rts = kf
             .rts_smoother(&xs, &Ps, None, None, RTSSmoothedResults::new())
             .unwrap();
-        dbg!(&rts.x);
-        dbg!(&rts.P);
-        dbg!(&rts.K);
-        dbg!(&rts.Pp);
+        std::dbg!(&rts.x);
+        std::dbg!(&rts.P);
+        std::dbg!(&rts.K);
+        std::dbg!(&rts.Pp);
     }
 }
