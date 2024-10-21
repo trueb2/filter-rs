@@ -102,7 +102,7 @@ pub(crate) mod vec {
     }
 }
 
-#[cfg(all(test, feature = "std"))]
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use super::vec::*;
     use assert_approx_eq::assert_approx_eq;
@@ -116,8 +116,8 @@ mod tests {
         let result = convolve(a, b, ConvolutionMode::Extended(100.0));
 
         let reference = [51.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0];
-        dbg!(&result);
-        dbg!(&reference);
+        std::dbg!(&result);
+        std::dbg!(&reference);
 
         debug_assert_eq!(reference.len(), result.len());
         for i in 0..reference.len() {
@@ -133,8 +133,8 @@ mod tests {
         let result = convolve(a, b, ConvolutionMode::Extended(100.0));
 
         let reference = [1002.5, 14., 25.5, 37., 48.5, 60., 71.5, 83., 184.5];
-        dbg!(&result);
-        dbg!(&reference);
+        std::dbg!(&result);
+        std::dbg!(&reference);
 
         debug_assert_eq!(reference.len(), result.len());
         for i in 0..reference.len() {

@@ -79,7 +79,7 @@ pub fn predict<F: Float>(pdf: &[F], offset: i64, kernel: &[F], mode: EdgeHandlin
     }
 }
 
-#[cfg(all(test, feature = "std"))]
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
@@ -97,8 +97,8 @@ mod tests {
 
         let result = predict(&pdf, -1, &kernel, EdgeHandling::Wrap);
         let reference = [0.5, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5];
-        dbg!(&result);
-        dbg!(&reference);
+        std::dbg!(&result);
+        std::dbg!(&reference);
 
         debug_assert_eq!(reference.len(), result.len());
         for i in 0..reference.len() {
@@ -126,8 +126,8 @@ mod tests {
             9.90000000e+01,
             1.48500000e+02,
         ];
-        dbg!(&result);
-        dbg!(&reference);
+        std::dbg!(&result);
+        std::dbg!(&reference);
 
         debug_assert_eq!(reference.len(), result.len());
         for i in 0..reference.len() {
@@ -149,8 +149,8 @@ mod tests {
         let reference = [
             0.29487179, 0.17948718, 0.08333333, 0.05128205, 0.05448718, 0.11217949, 0.22435897,
         ];
-        dbg!(&result);
-        dbg!(&reference);
+        std::dbg!(&result);
+        std::dbg!(&reference);
 
         debug_assert_eq!(reference.len(), result.len());
         for i in 0..reference.len() {
@@ -172,8 +172,8 @@ mod tests {
         let reference = [
             0.80769231, 1.20512821, 2.13461538, 4.15384615, 2.10576923, 0.11217949, 0.48076923,
         ];
-        dbg!(&result);
-        dbg!(&reference);
+        std::dbg!(&result);
+        std::dbg!(&reference);
 
         debug_assert_eq!(reference.len(), result.len());
         for i in 0..reference.len() {
@@ -195,8 +195,8 @@ mod tests {
         let reference = [
             10.0, 7.5, 2.50641026, 1.27564103, 0.05448718, 2.56089744, 7.51923077,
         ];
-        dbg!(&result);
-        dbg!(&reference);
+        std::dbg!(&result);
+        std::dbg!(&reference);
 
         debug_assert_eq!(reference.len(), result.len());
         for i in 0..reference.len() {
