@@ -178,8 +178,8 @@ where
     #[cfg(feature = "alloc")]
     pub fn rts_smoother(
         &mut self,
-        Xs: &mut Vec<OVector<F, DimX>>,
-        Ps: &mut Vec<OMatrix<F, DimX, DimX>>,
+        Xs: &Vec<OVector<F, DimX>>,
+        Ps: &Vec<OMatrix<F, DimX, DimX>>,
         Fs: Option<&[OMatrix<F, DimX, DimX>]>,
         Qs: Option<&[OMatrix<F, DimX, DimX>]>,
     ) -> Result<
@@ -392,6 +392,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::dbg;
+
     use assert_approx_eq::assert_approx_eq;
     use nalgebra::base::Vector1;
     use nalgebra::{Matrix1, Matrix2, Vector2, U1, U2};
@@ -433,5 +435,39 @@ mod tests {
                 0.05
             );
         }
+    }
+
+    #[test]
+    fn test_rts_smoother() {
+        let mut kf: KalmanFilter<f64, U2, U1, U1> = KalmanFilter::default();
+        kf.x = Vector2::new(2.0, 0.0);
+        kf.F = Matrix2::new(1.0, 1.0, 0.0, 1.0);
+        kf.H = Vector2::new(1.0, 0.0).transpose();
+        kf.P *= 1000.0;
+        kf.R = Matrix1::new(5.0);
+        kf.Q = Matrix2::repeat(0.0001);
+
+        let mut xs = vec![];
+        let mut Ps = vec![];
+        for t in 0..100 {
+            let z = Vector1::new(t as f64);
+            kf.update(&z, None, None).unwrap();
+            kf.predict(None, None, None, None);
+            xs.push(kf.x.clone());
+            Ps.push(kf.P.clone());
+            // This matches the results from an equivalent filterpy filter.
+            assert_approx_eq!(
+                kf.x[0],
+                if t == 0 { 0.0099502487 } else { t as f64 + 1.0 },
+                0.05
+            );
+        }
+
+        #[allow(non_snake_case)]
+        let (x, P, K, Pp) = kf.rts_smoother(&xs, &Ps, None, None).unwrap();
+        dbg!(&x);
+        dbg!(&P);
+        dbg!(&K);
+        dbg!(&Pp);
     }
 }
