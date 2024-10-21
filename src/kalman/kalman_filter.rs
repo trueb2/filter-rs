@@ -213,12 +213,6 @@ where
 
         let mut K = vec![OMatrix::<F, DimX, DimX>::zeros(); n];
 
-        // for k in range(n-2, -1, -1):
-        //     Pp[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
-        //     K[k]  = dot(dot(P[k], Fs[k+1].T), inv(Pp[k]))
-        //     x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
-        //     P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
-
         let mut x = Xs.clone();
         let mut P = Ps.clone();
         let mut Pp = Ps.clone();
