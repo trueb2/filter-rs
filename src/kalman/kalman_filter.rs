@@ -431,6 +431,8 @@ mod tests {
         }
     }
 
+    #[allow(non_snake_case)]
+    #[cfg(feature = "alloc")]
     #[test]
     fn test_rts_smoother() {
         let mut kf: KalmanFilter<f64, U2, U1, U1> = KalmanFilter::default();
@@ -457,7 +459,6 @@ mod tests {
             );
         }
 
-        #[allow(non_snake_case)]
         let (x, P, K, Pp) = kf.rts_smoother(&xs, &Ps, None, None).unwrap();
         dbg!(&x);
         dbg!(&P);
