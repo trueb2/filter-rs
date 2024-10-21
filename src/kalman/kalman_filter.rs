@@ -168,6 +168,8 @@ where
     /// Ps: array of the covariances of the Kalman filter.
     /// Fs: Optional array of the state transition matrices of the Kalman filter.
     /// Qs: Optional array of the process noise matrices of the Kalman filter.
+    /// result: Optional mutable reference to a `RTSSmoothedResults` struct to store the results.
+    ///     This allows reusing an existing struct instead of allocating a new one.
     ///
     /// # Returns
     /// A smoothed state, covariance, smoother gain, and predicted covariance.
@@ -178,6 +180,7 @@ where
         Ps: &[OMatrix<F, DimX, DimX>],
         Fs: Option<&[OMatrix<F, DimX, DimX>]>,
         Qs: Option<&[OMatrix<F, DimX, DimX>]>,
+        mut result: RTSSmoothedResults<F, DimX>,
     ) -> Result<RTSSmoothedResults<F, DimX>, KalmanError> {
         if Xs.len() != Ps.len() {
             return Err(KalmanError::LengthMismatch);
@@ -198,11 +201,21 @@ where
         let Fs = Fs.unwrap_or(fsv.as_ref().unwrap());
         let Qs = Qs.unwrap_or(qsv.as_ref().unwrap());
 
-        let mut K = vec![OMatrix::<F, DimX, DimX>::zeros(); n];
+        // Re-use the buffers in the result struct
+        result.clear();
+        result.K.resize(n, OMatrix::<F, DimX, DimX>::zeros());
+        result.x.reserve(Xs.len());
+        result.P.reserve(Ps.len());
+        result.Pp.reserve(Ps.len());
+        result.x.extend_from_slice(Xs);
+        result.P.extend_from_slice(Ps);
+        result.Pp.extend_from_slice(Ps);
 
-        let mut x = Xs.to_vec();
-        let mut P = Ps.to_vec();
-        let mut Pp = P.clone();
+        let x = &mut result.x;
+        let K = &mut result.K;
+        let P = &mut result.P;
+        let Pp = &mut result.Pp;
+
         for k in (0..n - 1).rev() {
             Pp[k] = (&Fs[k + 1] * &P[k]) * Fs[k + 1].transpose() + &Qs[k + 1];
             K[k] = (&P[k] * Fs[k + 1].transpose())
@@ -216,7 +229,7 @@ where
             P[k] += pk;
         }
 
-        Ok(RTSSmoothedResults { x, P, K, Pp })
+        Ok(result)
     }
 
     /// Predict state (prior) using the Kalman filter state propagation equations.
@@ -373,8 +386,9 @@ where
 }
 
 /// Results from the Rauch-Tung-Striebel smoother.
+#[cfg(feature = "alloc")]
 #[allow(non_snake_case)]
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct RTSSmoothedResults<F, DimX>
 where
     F: RealField + Float,
@@ -389,6 +403,32 @@ where
     pub K: Vec<OMatrix<F, DimX, DimX>>,
     /// Predicted state covariances.
     pub Pp: Vec<OMatrix<F, DimX, DimX>>,
+}
+
+impl<F, DimX> RTSSmoothedResults<F, DimX>
+where
+    F: RealField + Float,
+    DimX: DimName,
+    DefaultAllocator: Allocator<F, DimX> + Allocator<F, DimX, DimX>,
+{
+    /// Create a new `RTSSmoothedResults` struct with empty buffers.
+    /// Some dimensions may not have a Default impl
+    pub fn new() -> Self {
+        RTSSmoothedResults {
+            x: vec![],
+            P: vec![],
+            K: vec![],
+            Pp: vec![],
+        }
+    }
+
+    /// Clear the buffers without deallocating them.
+    pub fn clear(&mut self) {
+        self.x.clear();
+        self.P.clear();
+        self.K.clear();
+        self.Pp.clear();
+    }
 }
 
 #[cfg(test)]
@@ -466,7 +506,9 @@ mod tests {
             );
         }
 
-        let rts = kf.rts_smoother(&xs, &Ps, None, None).unwrap();
+        let rts = kf
+            .rts_smoother(&xs, &Ps, None, None, RTSSmoothedResults::new())
+            .unwrap();
         dbg!(&rts.x);
         dbg!(&rts.P);
         dbg!(&rts.K);
