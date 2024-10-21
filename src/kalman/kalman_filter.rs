@@ -170,28 +170,15 @@ where
     /// Qs: Optional array of the process noise matrices of the Kalman filter.
     ///
     /// # Returns
-    /// A tuple containing
-    /// x: smoothed means
-    /// P: smoothed covariances
-    /// K: smoother gain per step
-    /// Pp: predicted state covariances
+    /// A smoothed state, covariance, smoother gain, and predicted covariance.
     #[cfg(feature = "alloc")]
     pub fn rts_smoother(
         &mut self,
-        Xs: &Vec<OVector<F, DimX>>,
-        Ps: &Vec<OMatrix<F, DimX, DimX>>,
+        Xs: &[OVector<F, DimX>],
+        Ps: &[OMatrix<F, DimX, DimX>],
         Fs: Option<&[OMatrix<F, DimX, DimX>]>,
         Qs: Option<&[OMatrix<F, DimX, DimX>]>,
-    ) -> Result<
-        (
-            // todo: these should probably be OMatrix's
-            Vec<OVector<F, DimX>>,
-            Vec<OMatrix<F, DimX, DimX>>,
-            Vec<OMatrix<F, DimX, DimX>>,
-            Vec<OMatrix<F, DimX, DimX>>,
-        ),
-        KalmanError,
-    > {
+    ) -> Result<RTSSmoothedResults<F, DimX>, KalmanError> {
         if Xs.len() != Ps.len() {
             return Err(KalmanError::LengthMismatch);
         } else if Xs.len() < 2 {
@@ -213,9 +200,9 @@ where
 
         let mut K = vec![OMatrix::<F, DimX, DimX>::zeros(); n];
 
-        let mut x = Xs.clone();
-        let mut P = Ps.clone();
-        let mut Pp = Ps.clone();
+        let mut x = Xs.to_vec();
+        let mut P = Ps.to_vec();
+        let mut Pp = P.clone();
         for k in (0..n - 1).rev() {
             Pp[k] = (&Fs[k + 1] * &P[k]) * Fs[k + 1].transpose() + &Qs[k + 1];
             K[k] = (&P[k] * Fs[k + 1].transpose())
@@ -229,7 +216,7 @@ where
             P[k] += pk;
         }
 
-        Ok((x, P, K, Pp))
+        Ok(RTSSmoothedResults { x, P, K, Pp })
     }
 
     /// Predict state (prior) using the Kalman filter state propagation equations.
@@ -285,6 +272,7 @@ where
     }
 
     ///  Computes the new estimate based on measurement `z` and returns it without altering the state of the filter.
+    #[allow(clippy::type_complexity)]
     pub fn get_update(
         &self,
         z: &OVector<F, DimZ>,
@@ -384,6 +372,25 @@ where
     }
 }
 
+/// Results from the Rauch-Tung-Striebel smoother.
+#[allow(non_snake_case)]
+#[derive(Debug, Clone)]
+pub struct RTSSmoothedResults<F, DimX>
+where
+    F: RealField + Float,
+    DimX: DimName,
+    DefaultAllocator: Allocator<F, DimX> + Allocator<F, DimX, DimX>,
+{
+    /// Smoothed state means.
+    pub x: Vec<OVector<F, DimX>>,
+    /// Smoothed state covariances.
+    pub P: Vec<OMatrix<F, DimX, DimX>>,
+    /// Smoother gain per step.
+    pub K: Vec<OMatrix<F, DimX, DimX>>,
+    /// Predicted state covariances.
+    pub Pp: Vec<OMatrix<F, DimX, DimX>>,
+}
+
 #[cfg(test)]
 mod tests {
     use std::dbg;
@@ -403,7 +410,7 @@ mod tests {
             let z = Vector1::new(zf);
             kf.predict(None, None, None, None);
             kf.update(&z, None, None).unwrap();
-            assert_approx_eq!(zf, kf.z.clone().unwrap()[0]);
+            assert_approx_eq!(zf, kf.z.unwrap()[0]);
         }
     }
 
@@ -449,8 +456,8 @@ mod tests {
             let z = Vector1::new(t as f64);
             kf.update(&z, None, None).unwrap();
             kf.predict(None, None, None, None);
-            xs.push(kf.x.clone());
-            Ps.push(kf.P.clone());
+            xs.push(kf.x);
+            Ps.push(kf.P);
             // This matches the results from an equivalent filterpy filter.
             assert_approx_eq!(
                 kf.x[0],
@@ -459,10 +466,10 @@ mod tests {
             );
         }
 
-        let (x, P, K, Pp) = kf.rts_smoother(&xs, &Ps, None, None).unwrap();
-        dbg!(&x);
-        dbg!(&P);
-        dbg!(&K);
-        dbg!(&Pp);
+        let rts = kf.rts_smoother(&xs, &Ps, None, None).unwrap();
+        dbg!(&rts.x);
+        dbg!(&rts.P);
+        dbg!(&rts.K);
+        dbg!(&rts.Pp);
     }
 }
