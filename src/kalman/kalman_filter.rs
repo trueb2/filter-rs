@@ -7,6 +7,11 @@ use nalgebra::base::dimension::DimName;
 use nalgebra::{DefaultAllocator, OMatrix, OVector, RealField};
 use num_traits::Float;
 
+#[cfg(feature = "alloc")]
+use alloc::vec;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+
 /// Implements a Kalman filter.
 /// For a detailed explanation, see the excellent book Kalman and Bayesian
 /// Filters in Python [1]_. The book applies also for this Rust implementation and all functions
@@ -76,6 +81,10 @@ where
 pub enum KalmanError {
     /// The matrix is not invertible.
     NotInvertible,
+    /// The length of the input arrays are not equal.
+    LengthMismatch,
+    /// Invalid length of the input arrays.
+    InvalidLength,
 }
 
 #[allow(non_snake_case)]
@@ -150,6 +159,83 @@ where
         self.P_post = self.P.clone();
 
         Ok(())
+    }
+
+    /// Compute the Rauch-Tung-Striebel Kalman smoother on a set of means and covariances from the Kalman filter.
+    ///
+    /// # Arguments
+    /// Xs: array of the means (states) of the Kalman filter.
+    /// Ps: array of the covariances of the Kalman filter.
+    /// Fs: Optional array of the state transition matrices of the Kalman filter.
+    /// Qs: Optional array of the process noise matrices of the Kalman filter.
+    ///
+    /// # Returns
+    /// A tuple containing
+    /// x: smoothed means
+    /// P: smoothed covariances
+    /// K: smoother gain per step
+    /// Pp: predicted state covariances
+    #[cfg(feature = "alloc")]
+    pub fn rts_smoother(
+        &mut self,
+        Xs: &mut Vec<OVector<F, DimX>>,
+        Ps: &mut Vec<OMatrix<F, DimX, DimX>>,
+        Fs: Option<&[OMatrix<F, DimX, DimX>]>,
+        Qs: Option<&[OMatrix<F, DimX, DimX>]>,
+    ) -> Result<
+        (
+            // todo: these should probably be OMatrix's
+            Vec<OVector<F, DimX>>,
+            Vec<OMatrix<F, DimX, DimX>>,
+            Vec<OMatrix<F, DimX, DimX>>,
+            Vec<OMatrix<F, DimX, DimX>>,
+        ),
+        KalmanError,
+    > {
+        if Xs.len() != Ps.len() {
+            return Err(KalmanError::LengthMismatch);
+        } else if Xs.len() < 2 {
+            return Err(KalmanError::InvalidLength);
+        }
+
+        let n = Xs.len();
+
+        let mut fsv = None;
+        let mut qsv = None;
+        if Fs.is_none() {
+            fsv = Some(vec![self.F.clone(); n]);
+        }
+        if Qs.is_none() {
+            qsv = Some(vec![self.Q.clone(); n]);
+        }
+        let Fs = Fs.unwrap_or(fsv.as_ref().unwrap());
+        let Qs = Qs.unwrap_or(qsv.as_ref().unwrap());
+
+        let mut K = vec![OMatrix::<F, DimX, DimX>::zeros(); n];
+
+        // for k in range(n-2, -1, -1):
+        //     Pp[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
+        //     K[k]  = dot(dot(P[k], Fs[k+1].T), inv(Pp[k]))
+        //     x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
+        //     P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
+
+        let mut x = Xs.clone();
+        let mut P = Ps.clone();
+        let mut Pp = Ps.clone();
+        for k in (0..n - 1).rev() {
+            Pp[k] = (&Fs[k + 1] * &P[k]) * Fs[k + 1].transpose() + &Qs[k + 1];
+            K[k] = (&P[k] * Fs[k + 1].transpose())
+                * Pp[k]
+                    .clone()
+                    .try_inverse()
+                    .ok_or(KalmanError::NotInvertible)?;
+            let xk = &K[k] * (&x[k + 1] - &Fs[k + 1] * &x[k]);
+            x[k] += xk;
+            let pk = &K[k] * (&P[k + 1] - &Pp[k]) * &K[k].transpose();
+            P[k] += pk;
+        }
+
+        Ok((x, P, K, Pp))
     }
 
     /// Predict state (prior) using the Kalman filter state propagation equations.
