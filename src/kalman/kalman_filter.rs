@@ -198,8 +198,8 @@ where
         if Qs.is_none() {
             qsv = Some(vec![self.Q.clone(); n]);
         }
-        let Fs = Fs.unwrap_or(fsv.as_ref().unwrap());
-        let Qs = Qs.unwrap_or(qsv.as_ref().unwrap());
+        let Fs = Fs.unwrap_or_else(|| fsv.as_ref().unwrap());
+        let Qs = Qs.unwrap_or_else(|| qsv.as_ref().unwrap());
 
         // Re-use the buffers in the result struct
         result.clear();
