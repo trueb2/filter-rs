@@ -31,14 +31,14 @@ where
     DimX: DimName,
     DimZ: DimName,
     DimU: DimName,
-    DefaultAllocator: Allocator<F, DimX>
-        + Allocator<F, DimZ>
-        + Allocator<F, DimX, DimZ>
-        + Allocator<F, DimZ, DimX>
-        + Allocator<F, DimZ, DimZ>
-        + Allocator<F, DimX, DimX>
-        + Allocator<F, DimU>
-        + Allocator<F, DimX, DimU>,
+    DefaultAllocator: Allocator<DimX>
+        + Allocator<DimZ>
+        + Allocator<DimX, DimZ>
+        + Allocator<DimZ, DimX>
+        + Allocator<DimZ, DimZ>
+        + Allocator<DimX, DimX>
+        + Allocator<DimU>
+        + Allocator<DimX, DimU>,
 {
     /// Current state estimate.
     pub x: OVector<F, DimX>,
@@ -94,14 +94,14 @@ where
     DimX: DimName,
     DimZ: DimName,
     DimU: DimName,
-    DefaultAllocator: Allocator<F, DimX>
-        + Allocator<F, DimZ>
-        + Allocator<F, DimX, DimZ>
-        + Allocator<F, DimZ, DimX>
-        + Allocator<F, DimZ, DimZ>
-        + Allocator<F, DimX, DimX>
-        + Allocator<F, DimU>
-        + Allocator<F, DimX, DimU>,
+    DefaultAllocator: Allocator<DimX>
+        + Allocator<DimZ>
+        + Allocator<DimX, DimZ>
+        + Allocator<DimZ, DimX>
+        + Allocator<DimZ, DimZ>
+        + Allocator<DimX, DimX>
+        + Allocator<DimU>
+        + Allocator<DimX, DimU>,
 {
     /// Predict next state (prior) using the Kalman filter state propagation equations.
     pub fn predict(
@@ -331,14 +331,14 @@ where
     DimX: DimName,
     DimZ: DimName,
     DimU: DimName,
-    DefaultAllocator: Allocator<F, DimX>
-        + Allocator<F, DimZ>
-        + Allocator<F, DimX, DimZ>
-        + Allocator<F, DimZ, DimX>
-        + Allocator<F, DimZ, DimZ>
-        + Allocator<F, DimX, DimX>
-        + Allocator<F, DimU>
-        + Allocator<F, DimX, DimU>,
+    DefaultAllocator: Allocator<DimX>
+        + Allocator<DimZ>
+        + Allocator<DimX, DimZ>
+        + Allocator<DimZ, DimX>
+        + Allocator<DimZ, DimZ>
+        + Allocator<DimX, DimX>
+        + Allocator<DimU>
+        + Allocator<DimX, DimU>,
 {
     /// Returns a Kalman filter initialised with default parameters.
     fn default() -> Self {
@@ -393,7 +393,7 @@ pub struct RTSSmoothedResults<F, DimX>
 where
     F: RealField + Float,
     DimX: DimName,
-    DefaultAllocator: Allocator<F, DimX> + Allocator<F, DimX, DimX>,
+    DefaultAllocator: Allocator<DimX> + Allocator<DimX, DimX>,
 {
     /// Smoothed state means.
     pub x: Vec<OVector<F, DimX>>,
@@ -410,7 +410,7 @@ impl<F, DimX> RTSSmoothedResults<F, DimX>
 where
     F: RealField + Float,
     DimX: DimName,
-    DefaultAllocator: Allocator<F, DimX> + Allocator<F, DimX, DimX>,
+    DefaultAllocator: Allocator<DimX> + Allocator<DimX, DimX>,
 {
     /// Create a new `RTSSmoothedResults` struct with empty buffers.
     /// Some dimensions may not have a Default impl
